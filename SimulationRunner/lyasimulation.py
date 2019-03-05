@@ -46,6 +46,13 @@ class LymanAlphaSim(simulationics.SimulationICs):
         redshifts = np.arange(4.2, self.redend, -0.2)
         return 1./(1.+redshifts)
 
+
+class LymanAlphaNCDMSim(LymanAlphaSim):
+    """Specialise the LymanAlphaSim class for nCDM simulations."""
+    def __init__(self):
+        pass
+
+
 class LymanAlphaKnotICs(LymanAlphaSim):
     """Specialise the generation of initial conditions to change the power spectrum via knots.
     knot_val is a multiplicative factor applied to the power spectrum at knot_pos
