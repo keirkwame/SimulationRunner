@@ -32,6 +32,7 @@ class LymanAlphaSim(simulationics.SimulationICs):
         config['SnapshotWithFOF'] = 0
         #Quick star formation threshold from 1605.03462
         config["CritOverDensity"] = 1000.
+        config['CritPhysDensity'] = 0.
         config['WindModel'] = 'nowind'
         #These are parameters for the model to rescale the temperature-density relation
         if self.rescale_gamma:

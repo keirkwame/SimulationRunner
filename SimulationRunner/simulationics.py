@@ -376,7 +376,7 @@ class SimulationICs(object):
         config['MNum'] = numass[1]
         config['MNut'] = numass[0]
         #FOF
-        config['SnapshotWithFOF'] = 0 #1
+        config['SnapshotWithFOF'] = 1
         config['FOFHaloLinkingLength'] = 0.2
         config['FOFHaloMinLength'] = 32
         config['OutputList'] =  ','.join([str(t) for t in self.generate_times()])
@@ -391,9 +391,9 @@ class SimulationICs(object):
         config['WindModel'] = 'nowind'
         config['BlackHoleOn'] = 0
         config['OutputPotential'] = 0
-        config['CritPhysDensity'] = 0
-        config['CritOverDensity'] = 1000
-        config['QuickLymanAlphaProbability'] = 1
+        #config['CritPhysDensity'] = 0
+        #config['CritOverDensity'] = 1000
+        #config['QuickLymanAlphaProbability'] = 1
         if self.separate_gas:
             config['CoolingOn'] = 1
             config['TreeCoolFile'] = "TREECOOL"
