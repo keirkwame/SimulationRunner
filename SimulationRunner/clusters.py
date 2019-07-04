@@ -274,25 +274,25 @@ class HypatiaClass(ClusterClass):
 
     def _queue_directive(self, name, timelimit, nproc=4, prefix="#SBATCH", ntasks=24, savedir=None):
         """Generate Hypatia-specific mpi_submit"""
-        output_file = os.path.join(savedir, 'MPGadget.o')
-        error_file = os.path.join(savedir, 'MPGadget.e')
+        #output_file = os.path.join(savedir, 'MPGadget.o')
+        #error_file = os.path.join(savedir, 'MPGadget.e')
 
-        qstring = prefix + '-J %s\n'%name
-        qstring += prefix + '-p CORES24\n'
-        qstring += prefix + '-o %s\n'%output_file
-        qstring += prefix + '-e %s\n'%error_file
-        qstring += prefix + '--nodes=%i\n'%nproc
-        qstring += prefix + '--ntasks-per-node=%i\n'%ntasks
-        qstring += prefix + '--time:1:99:99:99\n'
-        qstring += prefix + '--mail-type=end\n'
-        qstring += prefix + '--mail-user=%s\n'%self.email
+        qstring = prefix + ' -J %s\n'%name
+        qstring += prefix + ' -p CORES24\n'
+        #qstring += prefix + ' -o %s\n'%output_file
+        #qstring += prefix + ' -e %s\n'%error_file
+        qstring += prefix + ' --nodes=%i\n'%nproc
+        qstring += prefix + ' --ntasks-per-node=%i\n'%ntasks
+        qstring += prefix + ' --time:1:99:99:99\n'
+        qstring += prefix + ' --mail-type=end\n'
+        qstring += prefix + ' --mail-user=%s\n'%self.email
         return qstring
 
     def _mpi_program(self, command):
         """String for MPI program to execute"""
         qstring = 'export OMP_NUM_THREADS=1\n'
-        qstring += 'export I_MPI_PIN_DOMAIN=omp:compact'
-        qstring += 'export I_MPI_PIN_ORDER=scatter'
+        qstring += 'export I_MPI_PIN_DOMAIN=omp:compact\n'
+        qstring += 'export I_MPI_PIN_ORDER=scatter\n'
         qstring += 'srun --mpi=pmi2 %s\n'%command
         return qstring
 
@@ -306,4 +306,4 @@ class HypatiaClass(ClusterClass):
             #Nodes!
             mpis.write(self._queue_directive(name, timelimit=1, nproc=1, ntasks=24))
             mpis.write("export OMP_NUM_THREADS=1\n")
-            mpis.write("python flux_power.py output")
+            mpis.write("python flux_power.py output\n")
