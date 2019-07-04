@@ -4,6 +4,8 @@ import asciitable
 import scipy.interpolate as spi
 import scipy.special as sps
 
+from . import read_uvb_tab
+
 #################
 ### Constants ###
 #################
@@ -97,8 +99,8 @@ def interpUVB(model):
         data=asciitable.read("FIXME")
     elif model=="OHL16": # this is our corrected model to match observations
         data=asciitable.read("FIXME")
-    elif model=="P18":
-        data=asciitable.read("data/TREECOOL_P18.txt")
+    elif model=="pu":
+        data=asciitable.read(read_uvb_tab.get_uvb_filename(model))
     else:
         print('ERROR, model not defined: %s'%(model))
     lz = data['col1']
