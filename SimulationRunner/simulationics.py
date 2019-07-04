@@ -227,6 +227,7 @@ class SimulationICs(object):
         config['NgridNu'] = 0
         config['MaxMemSizePerNode'] = 0.8
         config['ProduceGas'] = int(self.separate_gas)
+        config['MakeGlassGas'] = 0
         #Suppress Gaussian mode scattering
         config['UnitaryAmplitude'] = int(self.unitary)
         #The 2LPT correction is computed for one fluid. It is not clear
@@ -241,6 +242,9 @@ class SimulationICs(object):
         config['OmegaBaryon'] = self.omegab
         config['HubbleParam'] = self.hubble
         config['Redshift'] = self.redshift
+        config['Sigma8'] = -1
+        config['PrimordialIndex'] = self.ns
+        config['PrimordialAmp'] = self.scalar_amp
         zstr = self._camb_zstr(self.redshift)
         config['FileWithInputSpectrum'] = camb_output + "ics_matterpow_"+zstr+".dat"
         config['FileWithTransferFunction'] = camb_output + "ics_transfer_"+zstr+".dat"
@@ -254,7 +258,10 @@ class SimulationICs(object):
         assert config['InputPowerRedshift'] == '-1'
         config['Seed'] = self.seed
         #Turn this off since it doesn't seem to agree with linear theory very well.
-        config['ScaleDepVelocity'] = 0
+        config['ScaleDepVelocity'] = 1
+        config['UnitLength_in_cm'] = 3.085678e21
+        config['UnitMass_in_g'] = 1.989e43
+        config['UnitVelocity_in_cm_per_s'] = 1e5
         config = self._genicfile_child_options(config)
         config.update(self._cluster.cluster_runtime())
         config.write()
@@ -348,7 +355,7 @@ class SimulationICs(object):
             os.mkdir(os.path.join(self.outdir, "output"))
         except FileExistsError:
             pass
-        config['TimeLimitCPU'] = int(60*60*self._cluster.timelimit-300)
+        config['TimeLimitCPU'] = 430000 #int(60*60*self._cluster.timelimit-300)
         config['TimeMax'] = 1./(1+self.redend)
         config['Omega0'] = self.omega0
         config['OmegaLambda'] = 1- self.omega0
@@ -357,7 +364,7 @@ class SimulationICs(object):
         config['HubbleParam'] = self.hubble
         config['RadiationOn'] = 1
         config['HydroOn'] = 1
-        config['DensityIndependentSphOn'] = 0
+        config['DensityIndependentSphOn'] = 1 #0
         config['Nmesh'] = 2*self.npart
         #Neutrinos
         if self.m_nu > 0:
@@ -369,8 +376,9 @@ class SimulationICs(object):
         config['MNum'] = numass[1]
         config['MNut'] = numass[0]
         #FOF
-        config['SnapshotWithFOF'] = 1
+        config['SnapshotWithFOF'] = 0 #1
         config['FOFHaloLinkingLength'] = 0.2
+        config['FOFHaloMinLength'] = 32
         config['OutputList'] =  ','.join([str(t) for t in self.generate_times()])
         #These are only used for gas, but must be set anyway
         config['MinGasTemp'] = 100
@@ -383,6 +391,9 @@ class SimulationICs(object):
         config['WindModel'] = 'nowind'
         config['BlackHoleOn'] = 0
         config['OutputPotential'] = 0
+        config['CritPhysDensity'] = 0
+        config['CritOverDensity'] = 1000
+        config['QuickLymanAlphaProbability'] = 1
         if self.separate_gas:
             config['CoolingOn'] = 1
             config['TreeCoolFile'] = "TREECOOL"
