@@ -49,8 +49,27 @@ class LymanAlphaSim(simulationics.SimulationICs):
 
 class LymanAlphaNCDMSim(LymanAlphaSim):
     """Specialise the LymanAlphaSim class for nCDM simulations."""
-    def __init__(self):
-        pass
+    def __init__(self, *, alpha, beta, gamma, rescale_gamma=True, rescale_amp=1., rescale_slope=0., redend=4.24,
+                 uvb='on', **kwargs):
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+        super().__init__(rescale_gamma=rescale_gamma, rescale_amp=rescale_amp, rescale_slope=rescale_slope,
+                         redend=redend, uvb=uvb, **kwargs)
+
+    def generate_times(self):
+        """Decide which snapshots to save"""
+        snapshot_redshifts = np.array([7., 6., 5.4, 4.95, 4.58, 4.4, 4.24])
+        return 1. / (1. + snapshot_redshifts)
+
+    def transfer_function_nCDM(self, k, alpha=0., beta=1., gamma=0.):
+        """Square root of ratio of linear power spectrum in presence of nCDM with respect to that in presence of CDM."""
+        return (1. + ((alpha * k) ** beta)) ** gamma
+
+    def get_linear_matter_power_spectrum(self, k, z, power_spectrum_instance):
+        """Get linear matter power spectrum for given k (h/Mpc) and z."""
+        nCDM_correction = self.transfer_function_nCDM(k, alpha=self.alpha, beta=self.beta, gamma=self.gamma) ** 2
+        return power_spectrum_instance.get_pklin(k=k, z=z) * nCDM_correction
 
 
 class LymanAlphaKnotICs(LymanAlphaSim):

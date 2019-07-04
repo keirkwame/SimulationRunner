@@ -15,6 +15,7 @@ from . import utils
 from . import clusters
 from . import read_uvb_tab
 from . import cambpower
+from . import gen_UVB
 
 class SimulationICs(object):
     """
@@ -44,7 +45,11 @@ class SimulationICs(object):
     m_nu - neutrino mass
     unitary - if true, do not scatter modes, but use a unitary gaussian amplitude.
     """
-    def __init__(self, *, outdir, box, npart, seed = 9281110, redshift=99, redend=0, separate_gas=True, omega0=0.288, omegab=0.0472, hubble=0.7, scalar_amp=2.427e-9, ns=0.97, rscatter=False, m_nu=0, nu_hierarchy='degenerate', uvb="pu", cluster_class=clusters.StampedeClass, nu_acc=1e-5, unitary=True):
+    def __init__(self, *, outdir, box, npart, seed = 9281110, redshift=99, redend=0, separate_gas=True, omega0=0.288,
+                 omegab=0.0472, hubble=0.7, scalar_amp=2.427e-9, ns=0.97, rscatter=False, m_nu=0,
+                 nu_hierarchy='degenerate', uvb="pu", z_rei=7., z_rei_HeII=3., delta_T_HI_K=2.e+4,
+                 delta_T_HeII_K=1.5e+4, cluster_class=clusters.StampedeClass, MPGadget_directory='default', nu_acc=1e-5,
+                 unitary=True):
         #Check that input is reasonable and set parameters
         #In Mpc/h
         assert box < 20000
@@ -72,7 +77,12 @@ class SimulationICs(object):
         self.nu_acc = nu_acc
         #UVB? Only matters if gas
         self.uvb = uvb
-        assert self.uvb == "hm" or self.uvb == "fg" or self.uvb == "sh" or self.uvb == "pu"
+        assert self.uvb == "hm" or self.uvb == "fg" or self.uvb == "sh" or self.uvb == "pu" or self.uvb == "on"
+        if self.uvb == "on":
+            self.z_rei = z_rei
+            self.z_rei_HeII = z_rei_HeII
+            self.delta_T_HI_K = delta_T_HI_K
+            self.delta_T_HeII_K = delta_T_HeII_K
         self.rscatter = rscatter
         outdir = os.path.realpath(os.path.expanduser(outdir))
         #Make the output directory: will fail if parent does not exist
@@ -91,13 +101,13 @@ class SimulationICs(object):
         self.m_nu = m_nu
         self.nu_hierarchy = nu_hierarchy
         self.outdir = outdir
-        self._set_default_paths()
+        self._set_default_paths(MPGadget_directory=MPGadget_directory)
         self._cluster = cluster_class(gadget=self.gadgetexe, param=self.gadgetparam, genic=self.genicexe, genicparam=self.genicout)
         #For repeatability, we store git hashes of Gadget, GenIC, CAMB and ourselves
         #at time of running.
         self.simulation_git = utils.get_git_hash(os.path.dirname(__file__))
 
-    def _set_default_paths(self):
+    def _set_default_paths(self, MPGadget_directory):
         """Default paths and parameter names."""
         #Default parameter file names
         self.gadgetparam = "mpgadget.param"
@@ -109,7 +119,10 @@ class SimulationICs(object):
         #Default GenIC paths
         self.genicdefault = os.path.join(defaultpath,"mpgenic.ini")
         self.gadgetconfig = "Options.mk"
-        self.gadget_dir = os.path.expanduser("~/codes/MP-Gadget/")
+        if MPGadget_directory == 'default':
+            self.gadget_dir = os.path.expanduser("~/codes/MP-Gadget/")
+        else:
+            self.gadget_dir = MPGadget_directory
 
     def cambfile(self):
         """Generate the IC power spectrum using classylss."""
@@ -183,6 +196,10 @@ class SimulationICs(object):
             np.savetxt(pkfile, np.vstack([trans['k'], pk_lin]).T)
 
         return camb_output
+
+    def get_linear_matter_power_spectrum(self, k, z, power_spectrum_instance):
+        """Get linear matter power spectrum for given k (h/Mpc) and z."""
+        return power_spectrum_instance.get_pklin(k=k, z=z)
 
     def _camb_zstr(self,zz):
         """Get the formatted redshift for CAMB output files."""
@@ -370,7 +387,10 @@ class SimulationICs(object):
             config['CoolingOn'] = 1
             config['TreeCoolFile'] = "TREECOOL"
             #Copy a TREECOOL file into the right place.
-            self._copy_uvb()
+            if self.uvb is not 'on':
+                self._copy_uvb()
+            elif self.uvb is 'on':
+                self._generate_uvb()
             config = self._sfr_params(config)
             config = self._feedback_params(config)
         else:
@@ -404,6 +424,19 @@ class SimulationICs(object):
         ii = np.where((times > astart)*(times < aend))
         assert np.size(times[ii]) > 0
         return times[ii]
+
+    def _generate_uvb(self):
+        """Generate a new TREECOOL file"""
+        redshift_evaluations = np.arange(0., 16., 0.01)
+        volume_filling_factor_HII = gen_UVB.myfQHII_2(redshift_evaluations, self.z_rei)
+        z_end_HI_reion = gen_UVB.find_z_end_HI_reion(redshift_evaluations, self.z_rei)
+        volume_filling_factor_HeIII = gen_UVB.volume_filling_factor_HeIII(redshift_evaluations, self.z_rei_HeII)
+        cosmology_parameters = [self.hubble, self.omegab, self.omega0, 1. - self.omega0, 1. - 0.2453] #X_P = 1 - Y_P
+        TREECOOL_savefile = os.path.join(self.outdir, 'TREECOOL')
+
+        _ = gen_UVB.genQ2G_DeltaT(redshift_evaluations, volume_filling_factor_HII, z_end_HI_reion,
+                                  volume_filling_factor_HeIII, self.z_rei_HeII, self.delta_T_HI_K, self.delta_T_HeII_K,
+                                  model='pu', cosmo=cosmology_parameters, Gthreshold=True, fout=TREECOOL_savefile)
 
     def _copy_uvb(self):
         """The UVB amplitude for Gadget is specified in a file named TREECOOL in the same directory as the gadget binary."""

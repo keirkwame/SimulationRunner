@@ -3,11 +3,12 @@ import os.path
 
 class ClusterClass:
     """Generic class implementing some general defaults for cluster submissions."""
-    def __init__(self, gadget="MP-Gadget", genic="MP-GenIC", param="mpgadget.param", genicparam="_genic_params.ini", nproc=256, timelimit=24):
+    def __init__(self, gadget="MP-Gadget", genic="MP-GenIC", param="mpgadget.param", genicparam="_genic_params.ini",
+                 nproc=256, timelimit=24, email='keir.rogers@fysik.su.se'):
         """CPU parameters (walltime, number of cpus, etc):
         these are specified to a default here, but should be over-ridden in a machine-specific decorator."""
         self.nproc = nproc
-        self.email = "sbird@ucr.edu"
+        self.email = email
         self.timelimit = timelimit
         #Maximum memory available for an MPI task
         self.memory = 1800
@@ -23,7 +24,7 @@ class ClusterClass:
         name = os.path.basename(os.path.normpath(outdir))
         with open(os.path.join(outdir, "mpi_submit"),'w') as mpis:
             mpis.write("#!/bin/bash\n")
-            mpis.write(self._queue_directive(name, timelimit=self.timelimit, nproc=self.nproc))
+            mpis.write(self._queue_directive(name, timelimit=self.timelimit, nproc=self.nproc, savedir=outdir))
             mpis.write(self._mpi_program(command=self.gadgetexe+" "+self.gadgetparam))
 
     def generate_mpi_submit_genic(self, outdir, extracommand=None):
@@ -33,7 +34,7 @@ class ClusterClass:
         name = os.path.basename(os.path.normpath(outdir))
         with open(os.path.join(outdir, "mpi_submit_genic"),'w') as mpis:
             mpis.write("#!/bin/bash\n")
-            mpis.write(self._queue_directive(name, timelimit=0.5, nproc=self.nproc))
+            mpis.write(self._queue_directive(name, timelimit=0.5, nproc=self.nproc, savedir=outdir))
             mpis.write(self._mpi_program(command=self.genicexe+" "+self.genicparam))
             if extracommand is not None:
                 mpis.write(extracommand+"\n")
@@ -51,7 +52,7 @@ class ClusterClass:
         timestring = str(hr)+":"+str(minute)+":00"
         return timestring
 
-    def _queue_directive(self, name, timelimit, nproc=16, prefix="#PBS"):
+    def _queue_directive(self, name, timelimit, nproc=16, prefix="#PBS", savedir=None):
         """Write the part of the mpi_submit file that directs the queueing system.
         This is usually specific to a given cluster.
         The prefix argument is a string at the start of each line.
@@ -89,7 +90,7 @@ class HipatiaClass(ClusterClass):
         super().__init__(*args, **kwargs)
         self.memory = 2500
 
-    def _queue_directive(self, name, timelimit, nproc=16, prefix="#PBS"):
+    def _queue_directive(self, name, timelimit, nproc=16, prefix="#PBS", savedir=None):
         """Generate mpi_submit with coma specific parts"""
         qstring = super()._queue_directive(name=name, prefix=prefix, timelimit=timelimit)
         qstring += prefix+" -l nodes="+str(int(nproc/16))+":ppn=16\n"
@@ -118,7 +119,7 @@ class MARCCClass(ClusterClass):
         super().__init__(*args, nproc=nproc,timelimit=timelimit, **kwargs)
         self.memory = 5000
 
-    def _queue_directive(self, name, timelimit, nproc=48, prefix="#SBATCH"):
+    def _queue_directive(self, name, timelimit, nproc=48, prefix="#SBATCH", savedir=None):
         """Generate mpi_submit with coma specific parts"""
         _ = timelimit
         qstring = prefix+" --partition=parallel\n"
@@ -163,7 +164,7 @@ class BIOClass(ClusterClass):
         super().__init__(*args, nproc=nproc,timelimit=timelimit, **kwargs)
         self.memory = 4
 
-    def _queue_directive(self, name, timelimit, nproc=256, prefix="#SBATCH"):
+    def _queue_directive(self, name, timelimit, nproc=256, prefix="#SBATCH", savedir=None):
         """Generate mpi_submit with coma specific parts"""
         _ = timelimit
         qstring = prefix+" --partition=short\n"
@@ -220,7 +221,7 @@ class StampedeClass(ClusterClass):
     def __init__(self, *args, nproc=2,timelimit=3,**kwargs):
         super().__init__(*args, nproc=nproc,timelimit=timelimit, **kwargs)
 
-    def _queue_directive(self, name, timelimit, nproc=2, prefix="#SBATCH",ntasks=4):
+    def _queue_directive(self, name, timelimit, nproc=2, prefix="#SBATCH",ntasks=4, savedir=None):
         """Generate mpi_submit with stampede specific parts"""
         _ = timelimit
         qstring = prefix+" --partition=skx-normal\n"
@@ -268,24 +269,41 @@ class StampedeClass(ClusterClass):
 
 class HypatiaClass(ClusterClass):
     """Subclass for Hypatia cluster in UCL"""
-    def _queue_directive(self, name, timelimit, nproc=256, prefix="#PBS"):
+    def __init__(self, *args, nproc=4, **kwargs):
+        super().__init__(*args, nproc=nproc, **kwargs)
+
+    def _queue_directive(self, name, timelimit, nproc=4, prefix="#SBATCH", ntasks=24, savedir=None):
         """Generate Hypatia-specific mpi_submit"""
-        _ = timelimit
-        qstring = prefix+" -m bae\n"
-        qstring += prefix+" -r n\n"
-        qstring += prefix+" -q smp\n"
-        qstring += prefix+" -N "+name+"\n"
-        qstring += prefix+" -M "+self.email+"\n"
-        qstring += prefix+" -l nodes=1:ppn="+str(nproc)+"\n"
-        #Pass environment to child processes
-        qstring += prefix+" -V\n"
+        output_file = os.path.join(savedir, 'MPGadget.o')
+        error_file = os.path.join(savedir, 'MPGadget.e')
+
+        qstring = prefix + '-J %s\n'%name
+        qstring += prefix + '-p CORES24\n'
+        qstring += prefix + '-o %s\n'%output_file
+        qstring += prefix + '-e %s\n'%error_file
+        qstring += prefix + '--nodes=%i\n'%nproc
+        qstring += prefix + '--ntasks-per-node=%i\n'%ntasks
+        qstring += prefix + '--time:1:99:99:99\n'
+        qstring += prefix + '--mail-type=end\n'
+        qstring += prefix + '--mail-user=%s\n'%self.email
         return qstring
 
     def _mpi_program(self, command):
-        """String for MPI program to execute. Hipatia is weird because PBS_JOBID needs to be unset for the job to launch."""
-        #Change to current directory
-        qstring = "cd $PBS_O_WORKDIR\n"
-        #Don't ask me why this works, but it is necessary.
-        qstring += ". /opt/torque/etc/openmpi-setup.sh\n"
-        qstring += "mpirun -v -hostfile $PBS_NODEFILE -npernode "+str(self.nproc)+" "+command+"\n"
+        """String for MPI program to execute"""
+        qstring = 'export OMP_NUM_THREADS=1\n'
+        qstring += 'export I_MPI_PIN_DOMAIN=omp:compact'
+        qstring += 'export I_MPI_PIN_ORDER=scatter'
+        qstring += 'srun --mpi=pmi2 %s\n'%command
         return qstring
+
+    def generate_spectra_submit(self, outdir):
+        """Generate a sample spectra_submit file, which generates artificial spectra.
+        The prefix argument is a string at the start of each line.
+        It separates queueing system directives from normal comments"""
+        name = os.path.basename(os.path.normpath(outdir))
+        with open(os.path.join(outdir, "spectra_submit"),'w') as mpis:
+            mpis.write("#!/bin/bash\n")
+            #Nodes!
+            mpis.write(self._queue_directive(name, timelimit=1, nproc=1, ntasks=24))
+            mpis.write("export OMP_NUM_THREADS=1\n")
+            mpis.write("python flux_power.py output")
