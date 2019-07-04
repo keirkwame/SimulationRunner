@@ -81,7 +81,7 @@ class ClusterClass:
     def cluster_optimize(self):
         """Compiler optimisation options for a specific cluster.
         Only MP-Gadget pays attention to this."""
-        return "-fopenmp -O3 -g -Wall -ffast-math -march=native"
+        return "-fopenmp -O3 -g -Wall -ffast-math" #-march=native"
 
 class HipatiaClass(ClusterClass):
     """Subclassed for specific properties of the Hipatia cluster in Barcelona.

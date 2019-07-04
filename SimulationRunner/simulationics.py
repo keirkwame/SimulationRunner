@@ -330,7 +330,8 @@ class SimulationICs(object):
             config.write("MPICC = mpicc\nMPICXX = mpic++\n")
             optimize = self._cluster.cluster_optimize()
             config.write("OPTIMIZE = "+optimize+"\n")
-            config.write("GSL_INCL = $(shell gsl-config --cflags)\nGSL_LIBS = $(shell gsl-config --libs)\n")
+            #config.write("GSL_INCL = $(shell gsl-config --cflags)\nGSL_LIBS = $(shell gsl-config --libs)\n")
+            config.write("GSL_INCL = $(shell pkg-config --cflags gsl)\nGSL_LIBS = $(shell pkg-config --libs gsl)\n")
             self._cluster.cluster_config_options(config, prefix)
             self._gadget3_child_options(config, prefix)
         return g_config_filename
