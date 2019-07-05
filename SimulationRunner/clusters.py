@@ -273,17 +273,17 @@ class HypatiaClass(ClusterClass):
         super().__init__(*args, nproc=nproc, **kwargs)
 
     def _queue_directive(self, name, timelimit, nproc=4, prefix="#SBATCH", ntasks=24, savedir=None):
-        """Generate Hypatia-specific mpi_submit"""
+        """Generate Hypatia-specific mpi_submit [queue specifics should be specified using bash submission script]"""
         #output_file = os.path.join(savedir, 'MPGadget.o')
         #error_file = os.path.join(savedir, 'MPGadget.e')
 
         qstring = prefix + ' -J %s\n'%name
-        qstring += prefix + ' -p CORES24\n'
+        #qstring += prefix + ' -p CORES24\n'
         #qstring += prefix + ' -o %s\n'%output_file
         #qstring += prefix + ' -e %s\n'%error_file
-        qstring += prefix + ' --nodes=%i\n'%nproc
-        qstring += prefix + ' --ntasks-per-node=%i\n'%ntasks
-        qstring += prefix + ' --time:1:99:99:99\n'
+        #qstring += prefix + ' --nodes=%i\n'%nproc
+        #qstring += prefix + ' --ntasks-per-node=%i\n'%ntasks
+        qstring += prefix + ' --time="1:99:99:99"\n'
         qstring += prefix + ' --mail-type=end\n'
         qstring += prefix + ' --mail-user=%s\n'%self.email
         return qstring
