@@ -133,7 +133,7 @@ def check_ic_power_spectra(genicfileout, camb_zstr, outdir=".", accuracy=0.07, m
         error = plot_ic_power(kk_ic, Pk_ic, Pk_camb(kk_ic), sp=sp, npart=npart, outdir=outdir)
         #Don't worry too much about one failing mode.
         if np.size(np.where(error > accuracy)) > 3:
-            raise RuntimeError("Pk accuracy check failed for "+str(sp)+". Max error: "+str(np.max(error)))
+            print("Pk accuracy check failed for "+str(sp)+". Max error: "+str(np.max(error)))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
