@@ -296,7 +296,7 @@ class HypatiaClass(ClusterClass):
         qstring += 'srun --mpi=pmi2 %s\n'%command
         return qstring
 
-    def generate_spectra_submit(self, outdir):
+    def generate_spectra_submit(self, outdir, extra_options=''):
         """Generate a sample spectra_submit file, which generates artificial spectra.
         The prefix argument is a string at the start of each line.
         It separates queueing system directives from normal comments"""
@@ -306,4 +306,4 @@ class HypatiaClass(ClusterClass):
             #Nodes!
             mpis.write(self._queue_directive(name, timelimit=1, nproc=1, ntasks=24))
             mpis.write("export OMP_NUM_THREADS=1\n")
-            mpis.write("python flux_power.py output\n")
+            mpis.write("python flux_power.py output %s\n"%extra_options)
