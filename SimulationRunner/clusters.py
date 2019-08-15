@@ -283,7 +283,7 @@ class HypatiaClass(ClusterClass):
         #qstring += prefix + ' -e %s\n'%error_file
         #qstring += prefix + ' --nodes=%i\n'%nproc
         #qstring += prefix + ' --ntasks-per-node=%i\n'%ntasks
-        qstring += prefix + ' --time="1-99:99:99"\n'
+        qstring += prefix + ' --time="30-99:99:99"\n'
         qstring += prefix + ' --mail-type=end\n'
         qstring += prefix + ' --mail-user=%s\n'%self.email
         return qstring
