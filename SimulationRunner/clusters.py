@@ -323,5 +323,5 @@ class HypatiaClass(ClusterClass):
         with open(os.path.join(outdir, 'GenPK_submit'), 'w') as submit_file:
             submit_file.write('#!/bin/bash\n')
             submit_file.write(self._queue_directive(name, 1))
-            for :
-                submit_file.write(self._GenPK_program_single_snapshot(, GenPK_directory, box_length_kpc, hubble))
+            #for :
+            #    submit_file.write(self._GenPK_program_single_snapshot(, GenPK_directory, box_length_kpc, hubble))
