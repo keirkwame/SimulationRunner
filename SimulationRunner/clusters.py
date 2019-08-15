@@ -283,7 +283,7 @@ class HypatiaClass(ClusterClass):
         #qstring += prefix + ' -e %s\n'%error_file
         #qstring += prefix + ' --nodes=%i\n'%nproc
         #qstring += prefix + ' --ntasks-per-node=%i\n'%ntasks
-        qstring += prefix + ' --time="30-99:99:99"\n'
+        qstring += prefix + ' --time="2-00:00:00"\n'
         qstring += prefix + ' --mail-type=end\n'
         qstring += prefix + ' --mail-user=%s\n'%self.email
         return qstring
@@ -296,6 +296,15 @@ class HypatiaClass(ClusterClass):
         qstring += 'srun --mpi=pmi2 %s\n'%command
         return qstring
 
+    def _GenPK_program_single_snapshot(self, snapshot_number_string, GenPK_directory, box_length_kpc_h, hubble):
+        """String for GenPK programs (analysing a single snapshot) to execute"""
+        program_string = os.path.join(GenPK_directory, 'gen-pk')
+        program_string += ' -i output/PART_%s -o output\n' % snapshot_number_string
+
+        program_string += 'python ' + os.path.join(GenPK_directory, 'filtering_length.py') + ' output/PK-by-PART_%s '
+        program_string += '%f %f 1 filtering_length_%s.pdf\n'%(box_length_kpc_h, hubble, snapshot_number_string)
+        return program_string
+
     def generate_spectra_submit(self, outdir, extra_options=''):
         """Generate a sample spectra_submit file, which generates artificial spectra.
         The prefix argument is a string at the start of each line.
@@ -305,5 +314,14 @@ class HypatiaClass(ClusterClass):
             mpis.write("#!/bin/bash\n")
             #Nodes!
             mpis.write(self._queue_directive(name, timelimit=1, nproc=1, ntasks=24))
-            mpis.write("export OMP_NUM_THREADS=1\n")
+            #mpis.write("export OMP_NUM_THREADS=1\n") #Should be specified later
             mpis.write("python flux_power.py output %s\n"%extra_options)
+
+    def generate_GenPK_submit(self, outdir, GenPK_directory, box_length_kpc, hubble):
+        """Generate a GenPK_submit file, which measures the filtering length"""
+        name = os.path.basename(os.path.normpath(outdir))
+        with open(os.path.join(outdir, 'GenPK_submit'), 'w') as submit_file:
+            submit_file.write('#!/bin/bash\n')
+            submit_file.write(self._queue_directive(name, 1))
+            for :
+                submit_file.write(self._GenPK_program_single_snapshot(, GenPK_directory, box_length_kpc, hubble))

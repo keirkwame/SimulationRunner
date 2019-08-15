@@ -449,7 +449,7 @@ class SimulationICs(object):
 
         _ = gen_UVB.genQ2G_DeltaT(redshift_evaluations, volume_filling_factor_HII, z_end_HI_reion,
                                   volume_filling_factor_HeIII, self.z_rei_HeII, self.delta_T_HI_K, self.delta_T_HeII_K,
-                                  model='pu', cosmo=cosmology_parameters, Gthreshold=True, fout=TREECOOL_savefile)
+                                  model='HM12', cosmo=cosmology_parameters, Gthreshold=True, fout=TREECOOL_savefile)
 
     def _copy_uvb(self):
         """The UVB amplitude for Gadget is specified in a file named TREECOOL in the same directory as the gadget binary."""

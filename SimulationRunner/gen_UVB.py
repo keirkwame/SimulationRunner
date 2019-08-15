@@ -96,7 +96,7 @@ def fdQdz(z,Q):
 
 def interpUVB(model):
     if model=='HM12':
-        data=asciitable.read("FIXME")
+        data=asciitable.read(read_uvb_tab.get_uvb_filename('hm'))
     elif model=="OHL16": # this is our corrected model to match observations
         data=asciitable.read("FIXME")
     elif model=="pu":
