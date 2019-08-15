@@ -438,6 +438,11 @@ class SimulationICs(object):
         assert np.size(times[ii]) > 0
         return times[ii]
 
+    def get_snapshot_number(self, redshift):
+        """Get the snapshot number for a given redshift"""
+        snapshot_redshifts = (1. / self.generate_times()) - 1.
+        return np.where(snapshot_redshifts == redshift)[0][0]
+
     def _generate_uvb(self):
         """Generate a new TREECOOL file"""
         redshift_evaluations = np.arange(0., 16., 0.01)

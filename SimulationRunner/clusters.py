@@ -296,13 +296,17 @@ class HypatiaClass(ClusterClass):
         qstring += 'srun --mpi=pmi2 %s\n'%command
         return qstring
 
-    def _GenPK_program_single_snapshot(self, snapshot_number_string, GenPK_directory, box_length_kpc_h, hubble):
+    def _convert_snapshot_number_to_string(self, snapshot_number):
+        return str(snapshot_number).rjust(3, '0')
+
+    def _GenPK_program_single_snapshot(self, snapshot_number, GenPK_directory, box_length_kpc_h, hubble):
         """String for GenPK programs (analysing a single snapshot) to execute"""
         program_string = os.path.join(GenPK_directory, 'gen-pk')
-        program_string += ' -i output/PART_%s -o output\n' % snapshot_number_string
+        program_string += ' -i output/PART_%s -o output\n' % self._convert_snapshot_number_to_string(snapshot_number)
 
         program_string += 'python ' + os.path.join(GenPK_directory, 'filtering_length.py') + ' output/PK-by-PART_%s '
-        program_string += '%f %f 1 filtering_length_%s.pdf\n'%(box_length_kpc_h, hubble, snapshot_number_string)
+        program_string += '%f %f 1 filtering_length_%s.pdf\n'%(box_length_kpc_h, hubble,
+                                                               self._convert_snapshot_number_to_string(snapshot_number))
         return program_string
 
     def generate_spectra_submit(self, outdir, extra_options=''):
@@ -317,11 +321,12 @@ class HypatiaClass(ClusterClass):
             #mpis.write("export OMP_NUM_THREADS=1\n") #Should be specified later
             mpis.write("python flux_power.py output %s\n"%extra_options)
 
-    def generate_GenPK_submit(self, outdir, GenPK_directory, box_length_kpc, hubble):
+    def generate_GenPK_submit(self, outdir, GenPK_directory, snapshot_numbers, box_length_kpc_h, hubble):
         """Generate a GenPK_submit file, which measures the filtering length"""
         name = os.path.basename(os.path.normpath(outdir))
         with open(os.path.join(outdir, 'GenPK_submit'), 'w') as submit_file:
             submit_file.write('#!/bin/bash\n')
             submit_file.write(self._queue_directive(name, 1))
-            #for :
-            #    submit_file.write(self._GenPK_program_single_snapshot(, GenPK_directory, box_length_kpc, hubble))
+            for snapshot_number in snapshot_numbers:
+                submit_file.write(self._GenPK_program_single_snapshot(snapshot_number, GenPK_directory,
+                                                                      box_length_kpc_h, hubble))
