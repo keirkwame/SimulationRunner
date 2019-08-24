@@ -60,7 +60,7 @@ class LymanAlphaNCDMSim(LymanAlphaSim):
 
     def generate_times(self):
         """Decide which snapshots to save"""
-        snapshot_redshifts = np.array([7., 6., 5.4, 4.95, 4.58, 4.4, 4.24])
+        snapshot_redshifts = np.array([13., 11.5, 10., 8.5, 7., 6., 5.4, 4.95, 4.58, 4.4, 4.24])
         return 1. / (1. + snapshot_redshifts)
 
     def transfer_function_nCDM(self, k, alpha=0., beta=1., gamma=0.):
