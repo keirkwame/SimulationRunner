@@ -366,7 +366,7 @@ class SimulationICs(object):
         config['HubbleParam'] = self.hubble
         config['RadiationOn'] = 1
         config['HydroOn'] = 1
-        config['DensityIndependentSphOn'] = 1 #0
+        config['DensityIndependentSphOn'] = 0 #1
         config['Nmesh'] = 2*self.npart
         #Neutrinos
         if self.m_nu > 0:
